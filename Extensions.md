@@ -4,6 +4,11 @@ Extensions allow users to customize their app experience without depending on th
 
 Instead, an outside developer can decide to build a "Export to PDF" extension. Any app that supports extensions can now support Export to PDF functionality without needing to build it themselves, or even understand how it works.
 
+## Reference Implementations
+
+[Dropbox Sync Extension](https://github.com/standardnotes/website/blob/master/app/controllers/dropbox_controller.rb)
+[Standard Journal Extension](https://github.com/standardnotes/standard-journal)
+
 ## Specification
 The core interface of an extension is a primary URL that supports GET requests. An extension developer can implement an extension system however they choose, as long as the end result is a URL the end user can plug in to applications.
 
