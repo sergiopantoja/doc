@@ -7,6 +7,7 @@ Instead, an outside developer can decide to build a "Export to PDF" extension. A
 ## Reference Implementations
 
 [Dropbox Sync Extension](https://github.com/standardnotes/website/blob/master/app/controllers/dropbox_controller.rb)
+
 [Standard Journal Extension](https://github.com/standardnotes/standard-journal)
 
 ## Specification
