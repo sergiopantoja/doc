@@ -115,8 +115,6 @@ Create a class called `Item`. This model should have all metadata related fields
 - content
 - enc_item_key
 - content_type
-- presentation_name
-- url
 - created_at
 - updated_at
 - deleted
@@ -205,9 +203,7 @@ mapResponseItemsToLocalItems(responseItems) {
 updateFromJSON(jsonDic) {
     self.uuid = jsonDic["uuid"]
     self.contentType = jsonDic["content_type"]
-    self.presentationName = jsonDic["presentation_name"]
     self.encItemKey = json["enc_item_key"]
-    self.url = jsonDic["presentation_url"]
     self.createdAt = dateFromString(jsonDic["created_at"])
     self.updatedAt = dateFromString(jsonDic["updated_at"])
 
@@ -327,16 +323,8 @@ paramsForItem(item) {
 	params["presentation_name"] = item.presentationName
 	params["deleted"] = item.deleted
 	
-	if item.isPublic() {
-		// send decrypted
-		params["enc_item_key"] = null
-		params["auth_hash"] = null
-		params["content"] = "000" + CryptoHelper.base64(message: item.createContentJSONStringFromProperties();
-	} else {
-		// send encrypted
-		let encryptedParams = Crypto.encryptionParamsForItem(item);
-		params.merge(encryptedParams);
-	}
+	let encryptedParams = Crypto.encryptionParamsForItem(item);
+	params.merge(encryptedParams);
 }
 ```
 
@@ -388,9 +376,6 @@ referencesParams() {
 }
 ```
 
-
-Note that when sending an Item decrypted, you should null out `enc_item_key` and `auth_hash`. Make sure that these keys are present when sent to the server, but have a nil value.
-
 **CryptoHelper**
 
 ```
@@ -408,7 +393,7 @@ encryptionParamsForItem(item) {
 }
 ```
 
-When sending `content` unencrypted, we append a "000" to the base64 string to indicate that it is unencrypted. When sending encrypted, we append a "001" to the base64 string.
+When we append a "001" to the base64 string to indicate that it is encrypted.
 
 ```
 createKeyForItem(item) {
@@ -487,11 +472,6 @@ decryptResponseItems(responseItems) {
 			let contentToDecrypt = contentString.substringFrom(3)
 			let decryptedContent = self.decrypt(contentToDecrypt, ek)
 			item["content"] = JSON.parse(decryptedContent)
-		} else {
-			// decrypted, but has "000" prefix
-			// strip out prefix, then decode base64
-			let contentToDecode = contentString.substringFrom(3)
-			item["content"] = JSON.parse(Crypto.base64decode(contentToDecode))
 		}	
 	}
 }
@@ -551,57 +531,6 @@ setItemToBeDeleted(item) {
 Then sync.
 
 After successful sync, delete the item from your local database.
-
-### Presentations
-
-Finally, let's talk about presentations. An item that is presented means it is public, and should not be encrypted.
-
-Any item can be shared, or presented, simply by assigning it a `presentation_name` value. The server decides what the URL for this item would be given a presentation name. 
-
-It is up to the client however to decide which items are related to a presented item, and therefore must also be decrypted.
-
-For example, if you share a Tag, that Tag must be sent to the server decrypted, but also, any Notes belonging to that tag should also be sent decrypted.
-
-To handle this logic, we simply define a function on the Item class:
-
-**Item**
-
-```
-isPublic() {
-    return self.presentationName != nil
-}
-```
-
-Subclasses however should override this function if their definition of public is different. In the case of a Note, it is public if it has a presentation_name, OR if any of the tags it belongs to is public.
-
-**Note**
-
-```
-isPublic() {
-    return super.isPublic || self.hasOnePublicTag()
-}
-
-hasOnePublicTag() {
-    for tag in self.tags {
-        if tag.isPublic {
-            return true
-        }
-    }
-    return false
-}
-```
-
-A Note can be public if it belongs to a public Tag, but it can also be public because it is shared individually AND it belongs to a private tag. To make sure you're displaying the right URL, you can also implement this function on a Note object:
-
-**Note**
-
-```
-isSharedIndividually() {
-	return self.presentationName != nil
-}
-```
-
-That should be it.
 
 ## Next Steps
 
